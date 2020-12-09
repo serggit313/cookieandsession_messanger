@@ -1,53 +1,66 @@
 <?php
 session_start();
-// Функция валидации
-function validate()
+
+if($_SERVER['REQUEST_METHOD'] == 'POST')
 {
-    if(!empty($_POST['name']) && !empty($_POST['comment']))
-    {
-        saveComment('Database.txt', $_POST['name'], $_POST['comment']);
-    }
+	validade();
 }
 
-validate();
-
-function saveComment($document, $name, $comment)
+function validade()
 {
-    if(file_exists($document))
-    {
-        $w = $name . ': '. $comment . "\n"; 
-        file_put_contents($document, $w, FILE_APPEND);
-    }
+	if (!empty($_POST['name']) && !empty($_POST['comment'])) 
+	{
+		saveComment('comments.txt', $_POST['name'], $_POST['comment']);
+		return true;
+	}
+	return false;
 }
 
-function showComment($document)
+function saveComment($file, $name, $comment)
 {
-    if(file_exists($document))
-    {
-       $data_arr = file($document);
-       $revers = array_reverse($data_arr);
-       foreach($revers as $key=>$value)
-       {?>
-        <p>
-            <span>
-                <?php echo $value;?>
-            </span>
-        </p>
-       <?php }
-    }
+	if (file_exists($file)) 
+	{
+		$data = $name . ':' . $comment . "\r\n";
+		file_put_contents($file, $data, FILE_APPEND);
+		return true;
+	}
+	return false;
 }
 
-// Проверяем пользователя гость ли он или уже открыта сессия
-function is_guest()
+function getComment($file)
 {
-    if(!empty($_SESSION['user'] || !empty($_COOKIE['remember'])))
-    {
-        return false;
-    }
-    else
-    {
-        return true;
-    }
+	if (file_exists($file) && is_readable($file)) 
+	{
+		$comment_arr = file($file);
+		return $comment_arr;
+	}
+	return false;
+}
+
+function showComment($file)
+{
+	if(file_exists($file))
+	{
+		$comments = getComment($file);
+		if(!empty($comments))
+		{
+			foreach ($comments as $comment) 
+			{?>
+				<p>
+					<?php echo $comment; ?>
+				</p>
+			<?php }
+		}
+	}
+}
+
+function is_user()
+{
+	if($_SESSION['user'] || $_COOKIE['user'])
+	{
+		return true;
+	}
+	return false;
 }
 
 ?>
@@ -59,14 +72,8 @@ function is_guest()
     <title>Главная</title>
 </head>
 <body>
-    <?php if(is_guest() == true):?>
-    <h1>Только авторезированные пользователи могут оставлять комментарии</h1><br/>
-    <div class="reg_links">
-        <a href="auth.php" style="margin-right: 30px;">Авторизация</a> 
-        <a href="reg.php">Регистрация</a>
-    </div>
-    <?php else:?>
-    <form action="" method="POST">
+    <?php if(is_user()):?>
+    <form action="#" method="POST">
         <div>
             <input type="text" placeholder="Имя" name="name">
         </div>
@@ -75,15 +82,18 @@ function is_guest()
         </div>
         <button type="submit">Отправить</button>
     </form>
-
     <div class="comments">
-        <?php showComment('Database.txt'); ?>
-    </div>
-
+		<?php showComment('comments.txt'); ?>
+	</div>
     <div class="exit">
-        <a href="#">Выйти</a>
+        <a href="exit.php">Выйти</a>
+    </div>
+    <?php else:?>
+    <h1>Только авторезированные пользователи могут оставлять комментарии</h1><br/>
+    <div class="reg_links">
+        <a href="auth.php" style="margin-right: 30px;">Авторизация</a> 
+        <a href="reg.php">Регистрация</a>
     </div>
     <?php endif;?>
-
 </body>
 </html>
